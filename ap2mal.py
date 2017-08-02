@@ -28,9 +28,9 @@ if (malusername == ""): malusername = username
 malpassword = input("Enter your MAL password: ")
 
 baseURL = "http://www.anime-planet.com/users/%s/anime" % username
-apiURL = "http://myanimelist.net/api/anime/search.xml"
-apiURLadd = "http://myanimelist.net/api/animelist/add/%s.xml"
-apiURLupdate = "http://myanimelist.net/api/animelist/update/%s.xml"
+apiURL = "https://myanimelist.net/api/anime/search.xml"
+apiURLadd = "https://myanimelist.net/api/animelist/add/%s.xml"
+apiURLupdate = "https://myanimelist.net/api/animelist/update/%s.xml"
 
 passStr = str("%s:%s" % (malusername, malpassword)).replace("\n", "")
 authString = str(base64.b64encode(bytes(passStr, "utf-8")), "utf-8")
@@ -189,7 +189,6 @@ for i in range(1,pageNumber+1):
             xmlData += "\t<score>" + str(int(float(rating)*2)) + "</score>\n"
         except:
             xmlData += "\t<score></score>\n"
-            continue
         xmlData += "\t<downloaded_episodes></downloaded_episodes>\n"
         xmlData += "\t<storage_type></storage_type>\n"
         xmlData += "\t<storage_value></storage_value>\n"
