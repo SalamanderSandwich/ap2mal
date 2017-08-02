@@ -1,5 +1,5 @@
 # ap2mal
-Export from anime-planet to my anime list
+Export from anime-planet to my anime list. Credit to (the good people at mal)[https://myanimelist.net/forum/?topicid=135910].
 
 # How to Use
 1. Install [Python 3.5.2](https://www.python.org/downloads/release/python-352) (other versions may work, but this is the version I'm using)
