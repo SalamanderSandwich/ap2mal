@@ -3,14 +3,13 @@
 #Errors are output so you can enter those manually
 #set debug = True to get more information on all of your entries
 #Additional info and packages:
-#  Python 3.3.3 - http://python.org/download/
+#  Python 3.5.2 - http://python.org/download/
 #  BeautifulSoup4 - http://www.crummy.com/software/BeautifulSoup/#Download
 #Tips:
 # * You can leave your MAL username empty if it's the same as on AnimePlanet.
 # * To install BeautifulSoup unpack it anywhere and type "setup.py install" in the console from that folder.
 # * In order to successfully import the exported Anime-Planet animelist to MAL, first export MAL animelist,
 #    and copy the <myinfo> block just after <myanimelist> tag.
-
 
 from bs4 import BeautifulSoup,NavigableString
 import urllib.request,urllib.parse,base64,sys,re,codecs
@@ -21,6 +20,8 @@ delimiter = "\t"
 userAgent = "Mozilla/5.0 (Windows NT 6.2; Win64; x64;) Gecko/20100101 Firefox/20.0"
 
 print("This script will export your anime-planet.com anime list to myanimelist.net")
+
+output = open("ap2mal-output.log", 'w')
 
 username = input("Enter your AP username: ")
 malusername = input("Enter your MAL username: ")
@@ -66,6 +67,7 @@ for i in range(1,pageNumber+1):
         animeName = "" + animeItem.a.div.img["alt"]
         #pretty apostophe was breaking things
         animeName = animeName.replace("’","'")
+        output.write(animeName+" ~~> ")
         queryTitle = ""
         try:
             titlereq = urllib.request.Request(apiURL + "?" + urllib.parse.urlencode({ "q" : animeName }))
@@ -77,6 +79,7 @@ for i in range(1,pageNumber+1):
         except BaseException as e:
             print("Anime: " + animeName)
             print("Request to " + apiURL + "?" + urllib.parse.urlencode({ "q" : animeName }) + " failed. " +str(e))
+            output.write("failed\n")
             raise SystemExit
         #get the status, which is now a class name
         status = animeItem.find("div","statusArea").span["class"][0]
@@ -114,6 +117,7 @@ for i in range(1,pageNumber+1):
                     print(apiURL + "?" + urllib.parse.urlencode({ "q" : animeName }))
                     print("Search failed; no match found.")
                     print("Status: " + formattedStatus)
+                    output.write("failed\n")
                     continue
                 else:
                     #try truncated name for initial search
@@ -128,6 +132,7 @@ for i in range(1,pageNumber+1):
                     except BaseException as e:
                         print("Anime: " + animeName)
                         print("Request to " + apiURL + "?" + urllib.parse.urlencode({ "q" : formattedName }) + " failed. " +str(e))
+                        output.write("failed\n")
                         raise SystemExit
                     if queryTitle != '':
                         search = et.fromstring(queryTitle)
@@ -141,36 +146,41 @@ for i in range(1,pageNumber+1):
                         print(apiURL + "?" + urllib.parse.urlencode({ "q" : formattedName }))
                         print("Search failed; no match found.")
                         print("Status: " + formattedStatus)
+                        output.write("failed\n")
                         continue
-                continue
         except BaseException as e:
             print("Decoding of anime data failed. Error: " +str(e))
+            output.write("failed\n")
             # for adding anime manually
             continue
-        localName = animeName.lower().replace(":","").replace("(","").replace(")","")
+        localName = animeName.lower().replace(":","").replace("(","").replace(")","").replace("- ","")
         animeID = ""
         episodeCount = ""
         #check all results for an id
         for entry in search.findall("./entry"):
             try:
                 if entry.find("id") is not None and entry.find("id").text.strip()!="":
-                    if entry.find("title") is not None and localName in entry.find("title").text.lower().replace(":","").replace("(","").replace(")",""):
+                    if entry.find("title") is not None and localName in entry.find("title").text.lower().replace(":","").replace("(","").replace(")","").replace("- ",""):
                         animeID=entry.find("id").text
                         episodeCount = entry.find("episodes").text
                         break
-                    elif entry.find("english") is not None and localName in entry.find("english").text.lower().replace(":","").replace("(","").replace(")",""):
+                    elif entry.find("english") is not None and localName in entry.find("english").text.lower().replace(":","").replace("(","").replace(")","").replace("- ",""):
                         animeID=entry.find("id").text
                         episodeCount = entry.find("episodes").text
                         break
-                    elif entry.find("synonyms") is not None and localName in entry.find("synonyms").text.lower().replace(":","").replace("(","").replace(")",""):
+                    elif entry.find("synonyms") is not None and localName in entry.find("synonyms").text.lower().replace(":","").replace("(","").replace(")","").replace("- ",""):
                         animeID=entry.find("id").text
                         episodeCount = entry.find("episodes").text
                         break
             except:
                 continue
+        print("anime "+animeID)
         if animeID=="":
-            print("No MAL ID found in returned results.")
+            output.write("failed\n")
+            print("No MAL ID found in returned results for "+animeName)
             continue
+        else:
+            output.write(animeName+"\n")
         if debug: print("MAL ID = " + animeID)
 
         xmlData = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -182,7 +192,7 @@ for i in range(1,pageNumber+1):
         elif status == "2":
             xmlData += "\t<episode>" + episodeCount + "</episode>\n"
         else:
-            xmlData += "\t<episode>"+ animeItem.find("div","statusArea").text.replace("eps","").replace("ep","").replace("\t", "").replace("\n", "").replace("\r", "").replace(" ", "") +"</episode>\n"
+            xmlData += "\t<episode>"+ animeItem.find("div","statusArea").text.split("ep")[0].replace("\t", "").replace("\n", "").replace("\r", "").replace(" ", "") +"</episode>\n"
         xmlData += "\t<status>" + status +"</status>\n"
         try:
             rating = animeItem.find("div", attrs={"class": "ttRating"}).text;
@@ -227,6 +237,8 @@ for i in range(1,pageNumber+1):
                 isAdded = True
             except:
                 isAdded = False
+        if isAdded == False:
+            output.write("failed\n")
         if debug:
             if isAdded: sys.stdout.write("OK\n")
             else: sys.stdout.write("FAILED\n")
