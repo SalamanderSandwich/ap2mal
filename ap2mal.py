@@ -1,3 +1,4 @@
+# coding=utf-8
 #!/usr/bin/python
 #This script will take your anime-planet.com username and add your list to MAL using its API
 #Errors are output so you can enter those manually
